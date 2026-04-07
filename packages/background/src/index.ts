@@ -25,6 +25,44 @@ import * as serverInjected from "./frontend/server-injected";
 import * as serverUi from "./frontend/server-ui";
 import type { Background, Config } from "./types";
 
+const BACKPACK_USER_AGENT_RULE_ID = 991;
+
+function syncBackpackUserAgentRule() {
+  if (!globalThis.chrome?.declarativeNetRequest) {
+    return;
+  }
+
+  const version = globalThis.chrome.runtime.getManifest().version;
+
+  globalThis.chrome.declarativeNetRequest
+    .updateSessionRules({
+      removeRuleIds: [BACKPACK_USER_AGENT_RULE_ID],
+      addRules: [
+        {
+          id: BACKPACK_USER_AGENT_RULE_ID,
+          priority: 1,
+          action: {
+            type: "modifyHeaders",
+            requestHeaders: [
+              {
+                header: "user-agent",
+                operation: "append",
+                value: `Backpack/${version}`,
+              },
+            ],
+          },
+          condition: {
+            urlFilter: "||xnfts.dev/",
+            resourceTypes: ["xmlhttprequest"],
+          },
+        },
+      ],
+    })
+    .catch((error) => {
+      console.error("failed to install Backpack user-agent rule", error);
+    });
+}
+
 //
 // Entry: Starts the background service.
 //
@@ -99,8 +137,12 @@ export function start(cfg: Config): Background {
   );
 
   if (globalThis.chrome) {
+    syncBackpackUserAgentRule();
+
     // Open the extension to the onboarding page immediately and automatically after installation
     globalThis.chrome.runtime.onInstalled.addListener((obj) => {
+      syncBackpackUserAgentRule();
+
       if (obj.reason === globalThis.chrome.runtime.OnInstalledReason.INSTALL) {
         globalThis.chrome.tabs.create({
           url: globalThis.chrome.runtime.getURL(
