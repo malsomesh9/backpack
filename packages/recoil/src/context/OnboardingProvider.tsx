@@ -111,7 +111,11 @@ type SelectBlockchainType = {
 
 type IOnboardingContext = {
   onboardingData: OnboardingData;
-  setOnboardingData: (data: Partial<OnboardingData>) => void;
+  setOnboardingData: (
+    data:
+      | Partial<OnboardingData>
+      | ((data: OnboardingData) => Partial<OnboardingData>)
+  ) => void;
   handleSelectBlockchain: (data: SelectBlockchainType) => Promise<void>;
   createStore: (
     data: Partial<OnboardingData>
@@ -141,31 +145,36 @@ export function OnboardingProvider({
   const userClient = useRecoilValue(userClientAtom);
   const [data, setData] = useState<OnboardingData>(defaultState);
 
-  const setOnboardingData = useCallback((data: Partial<OnboardingData>) => {
-    return setData((oldData) => ({
-      ...oldData,
-      ...data,
-      selectedBlockchains: data.signedWalletDescriptors
-        ? [
-            ...new Set(
-              data.signedWalletDescriptors.map(
-                (s: WalletDescriptor) => s.blockchain
-              )
-            ),
-          ]
-        : oldData.selectedBlockchains,
-    }));
-  }, []);
+  const setOnboardingData = useCallback(
+    (
+      data:
+        | Partial<OnboardingData>
+        | ((data: OnboardingData) => Partial<OnboardingData>)
+    ) => {
+      return setData((oldData) => {
+        const nextData = typeof data === "function" ? data(oldData) : data;
+
+        return {
+          ...oldData,
+          ...nextData,
+          selectedBlockchains: nextData.signedWalletDescriptors
+            ? [
+                ...new Set(
+                  nextData.signedWalletDescriptors.map(
+                    (s: WalletDescriptor) => s.blockchain
+                  )
+                ),
+              ]
+            : oldData.selectedBlockchains,
+        };
+      });
+    },
+    []
+  );
 
   const handleSelectBlockchain = useCallback(
     async ({ blockchain }: SelectBlockchainType) => {
-      const {
-        selectedBlockchains,
-        signedWalletDescriptors,
-        mnemonic,
-        keyringType,
-        action,
-      } = data;
+      const { selectedBlockchains, mnemonic, keyringType, action } = data;
       if (selectedBlockchains.includes(blockchain)) {
         // setOnboardingData({
         //   // blockchain: null,
@@ -195,12 +204,12 @@ export function OnboardingProvider({
             const walletDescriptors = wallets.wallets[0]
               .walletDescriptors as BlockchainWalletDescriptor<BlockchainWalletDescriptorType.MNEMONIC>[];
 
-            setOnboardingData({
+            setOnboardingData((currentData) => ({
               signedWalletDescriptors: [
-                ...signedWalletDescriptors,
+                ...currentData.signedWalletDescriptors,
                 ...walletDescriptors,
               ],
-            });
+            }));
           } catch (err) {
             console.error(err);
           }
@@ -255,7 +264,6 @@ export function OnboardingProvider({
   const getBlockchainWalletInits = useCallback(
     (data: KeyringData): BlockchainWalletInit[] => {
       if (data.keyringType === "private-key") {
-        data.privateKeyKeyringInit;
         return [
           {
             type: BlockchainWalletInitType.PRIVATEKEY,
@@ -292,7 +300,7 @@ export function OnboardingProvider({
       }
       return { ok: true };
     },
-    []
+    [getBlockchainWalletInits, userClient]
   );
 
   //
