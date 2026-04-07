@@ -91,9 +91,9 @@ function PasswordInputBase(
         }}
       >
         {show ? (
-          <EyeOffIcon {...currentInputProps.passwordIconProps} />
-        ) : (
           <EyeIcon {...currentInputProps.passwordIconProps} />
+        ) : (
+          <EyeOffIcon {...currentInputProps.passwordIconProps} />
         )}
       </Stack>
     </Stack>

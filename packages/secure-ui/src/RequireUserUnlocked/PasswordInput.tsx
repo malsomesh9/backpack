@@ -56,9 +56,9 @@ export function PasswordInput(
         }}
       >
         {show ? (
-          <EyeOffIcon {...currentInputProps.passwordIconProps} />
-        ) : (
           <EyeIcon {...currentInputProps.passwordIconProps} />
+        ) : (
+          <EyeOffIcon {...currentInputProps.passwordIconProps} />
         )}
       </Stack>
     </Stack>
