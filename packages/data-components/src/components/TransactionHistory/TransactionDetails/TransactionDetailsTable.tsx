@@ -12,7 +12,6 @@ import {
 import { explorerUrl } from "@coral-xyz/secure-background/legacyCommon";
 import type { ViewStyleWithPseudos } from "@coral-xyz/tamagui";
 import {
-  ArrowUpRightIcon,
   openUrl,
   StyledText,
   TableCore,
@@ -109,7 +108,9 @@ function _TransactionSignatureRowValue({ hash }: { hash: string }) {
       <StyledText color="$accentBlue" fontSize="$sm">
         {_truncateSignature(hash)}
       </StyledText>
-      <ArrowUpRightIcon color="$accentBlue" size={14} />
+      <StyledText color="$accentBlue" fontSize="$sm">
+        {"\u2197"}
+      </StyledText>
     </XStack>
   );
 }
